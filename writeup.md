@@ -113,138 +113,29 @@ To stablize the detection, I made use of the `smooth_number` to just get the ave
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=EOUp2sg4StQ
 " target="_blank"><img src="http://img.youtube.com/vi/EOUp2sg4StQ/0.jpg" 
-alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
-
-
-In the pipeline.py, you could go to line 487 to 498, choice test on one image or a batch of image to see how the pipeline work.
-```python
-if __name__ == '__main__':
-	"""
-	image_test_tracker(), test pipeline on one image and show the image on screen
-	images_test_tracker(), test pipeline on images and write the result to related folder
-	"""
-	image_test_tracker("./test_images/test6.jpg", "project", debug_window=False)
-	# image_test_tracker("test_images/challenge/1.jpg", "challenge", debug_window=True)
-	# image_test_tracker("test_images/harder/1.jpg", "harder", debug_window=True)
-
-	# images_test_tracker("test_images/", "output_images/", "project", debug_window=True)
-	# images_test_tracker("test_images/challenge/", "output_images/challenge/", "challenge", debug_window=True)
-	# images_test_tracker("test_images/harder/", "output_images/harder/", "harder", debug_window=True)
-```
-
----
-
-### Pipeline (video)
-
-To apply the pipeline on the video, you could run the gen_video.py. to generate video. the option is explained in the document description.
-the code is in line 66-84
-```python
-if __name__ == "__main__":
-	"""
-	choise one line to uncoment and run the file, gen the video.
-	the video will be output to ./outpu_videos/temp/
-	option: subclip = True, just use (0-5) second video, False, use total long video.
-	option: debug_window = True, project the debug window on the up-right corner of the screen to visualize the image handle process
-								and write the fit lane failure/search lane failure image to ./output_videos/temp/images
-	"""
-	# get_image("./test_video/challenge_video.mp4", "./test_images/challenge/", [i for i in range(1,16)])
-	# get_image("./test_video/harder_challenge_video.mp4", "./test_images/harder/", [i for i in range(1,47)])
-
-	gen_video_tracker("project_video.mp4", subclip=True, debug_window=True) 
-	# gen_video_tracker("project_video.mp4", subclip=False, debug_window=False)
-
-	# gen_video_tracker("challenge_video.mp4", subclip=True, debug_window=True) 
-	# gen_video_tracker("challenge_video.mp4", subclip=False, debug_window=True)
-	
-	# gen_video_tracker("harder_challenge_video.mp4", subclip=True, debug_window=True)
-	# gen_video_tracker("harder_challenge_video.mp4", subclip=False, debug_window=False)
-```
-
-
-#### 1. Pipeline issue
-
-With the image process established on single image. We couldn't get the left/right lane correctly in whole video.
-there is always noise which will affect the lane detection.
-
-For example, in some frame, the lan detection failed, as below picuture shows
-![detect fail](./examples/project_detect_fail_resize.png)
-
-The full size picture is [link to full size picture](./examples/project_detect_fail.png)
-
-
-#### 2.  add debug window on the pictures.
-
-To solve this problem, we need to know what happed when the process not work.
-so I add a function `project_debug_window()` in the class, and we also need to check the fit lane(fitted polynomial) is OK or not.
-To check the lane at y postion **720/bot, 360/mid, 0/top** the lane pixel distence and project to the final result picture for debug.
-build the function `lane_sanity_check()` in `lane_detection.py`
-
-```python
-	lane_distance_bot = right_fitx[720] - left_fitx[720]
-	lane_distance_mid = right_fitx[320] - left_fitx[320]
-	lane_distance_top = right_fitx[0] - left_fitx[0]
-```
-
-The debug picture as below, the full size could find [here]
-
-This is done by the class "Pipeline"'s function `project_debug_window()`
-
-(./examples/project_detect_fail_with_debug.png)
-![detect_fail_debug](./examples/project_detect_fail_with_debug_resize.png)
-
-
-When lane detect is False. use the recent data to project the lane area and culcualte the lane radius and car offset.
-one detect failure and use recent data. As below picture show
-![project_with_previous_fit_lines](./examples/576_resize.jpg)
-
-#### 3 project video
-
-Use the `Pipeline.pipeline()`, skip the noise frame, the pipeline work well on the project_video.mp4 well.
-
-The project video is here [project_video.mp4](./output_video/project_video.mp4).
-The videos with debug window could find here [project_video_with_debug_window.mp4](./output_video/project_video_with_debug_window.mp4).
-
-
-#### 4. challenge video
-To solve the challenge video problem. Improve the pipeline with image process.
-
-The challenge vidoe could be find here [challenge_video.mp4](./output_video/challenge_video.mp4).
-
-The challenge video with debug window could be found here [challenge_video_with_debug_window](./output_video/challenge_video_with_debug_window.mp4).
-
-
-#### 5. harder chanllenge
-The main change of pipeline for harder_challenge compare with challenge is the image process, the search method is also changed. 
-
-The harder challenge vidoe could be find here [harder_challenge_video.mp4](./output_video/harder_challenge_video.mp4).
-
-The harder challenge video with debug window could be found here [harder_challenge_video_with_debug_window.mp4](./output_video/harder_challenge_video_with_debug_window.mp4).
+alt="project video demo" width="240" height="180" border="10" /></a>
 
 ---
 
 ### Discussion
 
-#### 1. the time/efficiency issue
+#### Generalize the algorithm
 
-`find_lane_pixels()` (helpers/lane_detection.py) is used to search the whole warped image to find the lane pionts.
+I can modify the Pipeline a bit to work reasonably well on the challenge video:
 
-The pipeline handle the image off-line, so not consider the efficiency issue. In real application, the pipeline must hanle the image before the next image arrive. a quick search method should be applied. 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=WoGBw4sw1e4
+" target="_blank"><img src="http://img.youtube.com/vi/WoGBw4sw1e4/0.jpg" 
+alt="challenge video demo" width="240" height="180" border="10" /></a>
 
-#### 2. lane_sanity check
-The `lane_sanity_check()` (helpers/lane_detection.py) function is very simple. To check if the fitted polynomial lines, just compare the fitted lines three y postions x distence to check if the fitted lines is OK. this is not work very well when the lane curve change dramticlly just like the in the harder_challenge video.
+However, the algorithm struggles to detect lanes in a more challenging lighting/road surface condition even after trying a more dynamic yellow-white thresholding and a smarter sliding window lane detection approach:
 
----
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=AVEcr9qhisc
+" target="_blank"><img src="http://img.youtube.com/vi/AVEcr9qhisc/0.jpg" 
+alt="more challenge video demo" width="240" height="180" border="10" /></a>
 
-### Folders and Files
+Like the thresholding method, the sanity check is also hand picked, which will fail in general purpose. Especially when the we have a very sharp turn. A more robust model should be developed. I have started exporing some automatic thresholding for the **more challenge video**. Maybe a nueral network based approach is worth a try. But to apply the algorithm in the real world, where efficiency is as important as correctness, we should measure the computation requirement as well as the power consumption. A really good solution should be a combination of pure computer vision approach maybe plus a really light weight neural network, which does not require a heavy duty GPU.
 
-* **camera_cal** the code which calibration the camera
-* **examples** some example pictures
-* **helper** all the functions which used in **pipeline.py** and **video.py**
-* **output_images** the images which processed by diff function.
-* **output_video** the video has finished
-* **test_images** the images used to test the pipeline
-* **test_video** three video for testing the lane detection
+#### Extreme weather condition
 
-* **pipeline.py** the code which use to hande the images. the actual lane dection happend.
-* **requirements.txt** the python package list in local machine
-* **gen_video.py** the code with use "pipeline" to handle the vidoe and generate the output video.
+So far I have only tested different lighting, road conditions. Other parameters like raining or snowing may terribly affect the performance of the system. I could find more dataset under different weather condition to get a more robust model.
+
